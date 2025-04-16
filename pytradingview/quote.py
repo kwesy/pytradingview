@@ -1,5 +1,5 @@
 
-from utils import genSessionID
+from .utils import genSessionID
 
 
 

@@ -1,10 +1,10 @@
 
 import threading
 import time
-from chart import ChartSession
-import protocol
+from .chart import ChartSession
+from . import protocol
 import websocket
-from quote import QuoteSession
+from .quote import QuoteSession
 
 
 

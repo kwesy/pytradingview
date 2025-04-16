@@ -1,5 +1,5 @@
 import json
-from utils import genSessionID
+from .utils import genSessionID
 from operator import itemgetter
 
 
