@@ -1,11 +1,10 @@
 # pytradingview
 
-A simple, open-source Python client for connecting to TradingView's WebSocket API.
+A lightweight, open-source Python client for connecting to TradingView's WebSocket API.
 
 ## Features
 
 - WebSocket connection management
-- Simple send/receive interface
 - Easy to extend for custom signals and data
 
 ## Dependencies
@@ -16,7 +15,7 @@ websocket-client
 ## Installation
 
 ```bash
-pip install 
+pip install pytradingview
 ```
 
 ## Usage
