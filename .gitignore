@@ -16,3 +16,4 @@ build
 *.coverage
 *.coverage.*
 *.cover
+tmp.py

@@ -3,8 +3,6 @@ from .utils import genSessionID
 from operator import itemgetter
 
 
-
-
 chart_types = {
   'HeikinAshi': 'BarSetHeikenAshi@tv-basicstudies-60!',
   'Renko': 'BarSetRenko@tv-prostudies-40!',
@@ -15,9 +13,37 @@ chart_types = {
 }
 
 
-
-
 class ChartSession:
+    """
+    ChartSession is a class that manages chart and replay sessions for interacting with a client bridge. 
+    It provides methods to set up charts, handle events, manage market data, and configure replay sessions.
+    Attributes:
+        chart_session (dict): A dictionary containing session ID, study listeners, indexes, and a send function.
+        current_series (int): Tracks the current series index.
+        series_created (bool): Indicates whether a series has been created.
+        callbacks (dict): A dictionary of event callbacks for handling various events like updates, errors, and replay events.
+    Methods:
+        get_periods: Returns the current period data.
+        get_all_periods: Returns all periods sorted in reverse order.
+        get_infos: Returns information about the current symbol.
+        handleEvent(event, *args): Executes all callbacks associated with a specific event.
+        handleError(*args): Handles errors by either printing them or invoking error callbacks.
+        on_data_c(packet): Processes chart-related data packets and updates periods or triggers events.
+        on_data_r(packet): Processes replay-related data packets and triggers replay events.
+        set_up_chart(): Sets up chart and replay sessions with the client bridge.
+        set_timezone(timezone="Etc/UTC"): Sets the timezone for the chart session.
+        set_series(timeframe='240', range=100, reference=None): Configures the series for the chart session.
+        set_market(symbol, options={}): Sets the market symbol and options for the chart session.
+        fetchMore(number=1): Requests more data for the chart session.
+        on_symbol_loaded(cb): Registers a callback for the 'symbolLoaded' event.
+        on_update(cb): Registers a callback for the 'update' event.
+        on_replay_loaded(cb): Registers a callback for the 'replayLoaded' event.
+        on_replay_resolution(cb): Registers a callback for the 'replayResolution' event.
+        on_replay_end(cb): Registers a callback for the 'replayEnd' event.
+        on_replay_point(cb): Registers a callback for the 'replayPoint' event.
+        on_error(cb): Registers a callback for the 'error' event.
+        delete(): Deletes the chart and replay sessions and cleans up resources.
+    """
 
     def __init__(self, client_bridge):
         self.__chart_session_id = genSessionID('cs')
@@ -54,24 +80,22 @@ class ChartSession:
 
     @property
     def get_infos(self):
-        # print(self.__infos)
         return self.__infos
 
     
     callbacks = {
-    'seriesLoaded': [],
-    'symbolLoaded': [],
-    'update': [],
+        'seriesLoaded': [],
+        'symbolLoaded': [],
+        'update': [],
 
-    'replayLoaded': [],
-    'replayPoint': [],
-    'replayResolution': [],
-    'replayEnd': [],
+        'replayLoaded': [],
+        'replayPoint': [],
+        'replayResolution': [],
+        'replayEnd': [],
 
-    'event': [],
-    'error': [],
-  }
-
+        'event': [],
+        'error': [],
+    }
 
     def handleEvent(self,event, *args):
         for fun in self.callbacks[event]:
@@ -84,11 +108,8 @@ class ChartSession:
             print('\033[31m ERROR:\033[0m', args)
         else:
             self.handleEvent('error', args)
-
     
     def on_data_c(self, packet):
-        # print('self.__infos', packet['type'])
-
         if isinstance(packet['data'][1], str) and self.study_listeners.get(packet['data'][1]):
             self.study_listeners[packet['data'][1]](packet)
             return
@@ -106,7 +127,7 @@ class ChartSession:
             changes = []
 
             keys = packet['data'][1].keys()
-            # print(packet['data'])
+
             for k in keys:
                 changes.append(k)
                 if k == '$prices':
@@ -132,12 +153,9 @@ class ChartSession:
                             'min': p['v'][3],
                             'volume': round(p['v'][5] * 100) / 100,
                         }
-                        # print('>>>',self.__current_period)
 
                     continue
-                # print('statd1')
                 if (self.study_listeners[k]): self.study_listeners[k](packet)
-                # print('statd2')
 
             self.handleEvent('update', changes)
             return
@@ -159,7 +177,6 @@ class ChartSession:
           if (self.__replaya_OKCB[packet['data'][1]]):
             self.__replaya_OKCB[packet['data'][1]]()
             del self.__replaya_OKCB[packet['data'][1]]
-
           return
 
         if (packet['type'] == 'replay_instance_id'):
@@ -185,10 +202,7 @@ class ChartSession:
     def set_up_chart(self):
         self.__client['sessions'][self.__chart_session_id] = {'type':'chart', 'onData': self.on_data_c}
         self.__client['sessions'][self.__replay_session_id] = {'type':'replay', 'onData': self.on_data_r}
-        # print('hhhh')
         self.__client['send']('chart_create_session', [self.__chart_session_id])
-
-
     
     def set_timezone(self, timezone:str="Etc/UTC"):
         self.__client['send']("switch_timezone",[self.__chart_session_id,timezone])
@@ -211,7 +225,6 @@ class ChartSession:
         timeframe,
         '' if self.series_created else calcRange,
         ])
-        # print(self.series_created)
         self.series_created = True
 
     def set_market(self, symbol, options:dict = {}):
@@ -246,7 +259,6 @@ class ChartSession:
                 options.get('replay'),
             ])
         
-
         complex = options.get('type') or options.get('replay')
         chartInit = {} if complex else symbolInit
 
@@ -255,7 +267,6 @@ class ChartSession:
             chartInit['symbol'] = symbolInit
             chartInit['type'] = chart_types[options.get('type')]
             if options.get('type'): chartInit['inputs'] = { } + options.get('inputs')
-            
 
         self.current_series += 1
 
@@ -269,8 +280,6 @@ class ChartSession:
 
     def fetchMore(self, number = 1):
         self.__client['send']('request_more_data', [self.__chart_session_id, '$prices', number])
-
-
 
     def on_symbol_loaded(self, cb):
         self.callbacks['symbolLoaded'].append(cb)
@@ -293,11 +302,8 @@ class ChartSession:
     def on_error(self, cb):
         self.callbacks['error'].append(cb)
 
-    # Study = studyructor(self.chartSession)
-
     def delete(self):
         if (self.__replay_mode): self.__client['send']('replay_delete_session', [self.__replay_session_id])
         self.__client['send']('chart_delete_session', [self.__chart_session_id])
         del self.__client['sessions'][self.__chart_session_id]
         self.__replay_mode = False
-

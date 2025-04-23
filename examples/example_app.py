@@ -3,7 +3,7 @@ from pytradingview import TVclient
 
 # Create the client and chart
 client = TVclient()
-chart = client.Chart
+chart = client.chart
 
 # Set up the chart
 chart.set_up_chart()
