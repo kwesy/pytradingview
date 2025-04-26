@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="pytradingview",
-    version="0.1.1",
+    version="0.2.0",
     packages=find_packages(),
     install_requires=["websocket-client>=1.5.1"],
     author="Onesimus Graves-Sampson",
