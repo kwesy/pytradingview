@@ -50,6 +50,11 @@ chart.on_update(handle_update)
 client.create_connection()
 ```
 
+#### Command line (CLI)
+```bash
+python -m pytradingview -d -s '2025-04-24 00:00' -e '2025-04-25 00:00' -p 'FX:EURUSD' 
+```
+
 ## Contributing
 
 Contributions are welcome! Please open issues or PRs to collaborate.
