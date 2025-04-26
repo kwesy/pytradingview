@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="pytradingview",
-    version="0.1.0",
+    version="0.1.1",
     packages=find_packages(),
     install_requires=["websocket-client>=1.5.1"],
     author="Onesimus Graves-Sampson",
@@ -11,4 +11,9 @@ setup(
     # license="MIT",
     # keywords=["tradingview", "trading", "forex", "stocks", "crypto"],
     url="https://github.com/kwesy/pytradingview.git",
+    entry_points={
+        'console_scripts': [
+            'pytradingview = pytradingview.__main__:main'
+        ]
+    },
 )

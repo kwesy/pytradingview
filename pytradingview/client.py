@@ -27,6 +27,7 @@ class Client():
         self.client_bridge = {
             'sessions': self.sessions,
             'send': self.send,
+            'end': self.end,
         }
 
         self.quote = QuoteSession(self.client_bridge)

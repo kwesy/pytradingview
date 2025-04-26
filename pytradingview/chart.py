@@ -1,4 +1,9 @@
+import csv
+import datetime
 import json
+import math
+import os
+import time
 from .utils import genSessionID
 from operator import itemgetter
 
@@ -52,6 +57,7 @@ class ChartSession:
         self.__periods = {}
         self.__current_period = {}
         self.__infos = {}
+        self.collected_data = [] # List to store collected data
 
         self.__replaya_OKCB = {}
         self.__client = client_bridge
@@ -123,7 +129,26 @@ class ChartSession:
             self.handleEvent('symbolLoaded')
             return
 
-        if packet['type'] in ['timescale_update', 'du']:
+        if packet['type'] == 'timescale_update': # historical data loaded
+            periods = packet['data'][1]['$prices']['s']
+
+            if not periods:
+                return
+            
+            candles = []
+            for p in periods:
+                c = {
+                    'time': p['v'][0],
+                    'open': p['v'][1],
+                    'close': p['v'][4],
+                    'high': p['v'][2],
+                    'low': p['v'][3],
+                    'volume': round(p['v'][5] * 100) / 100,
+                }
+                candles.append(c)
+            self.handleEvent('seriesLoaded', candles)
+
+        if packet['type'] == 'du': # current candle update
             changes = []
 
             keys = packet['data'][1].keys()
@@ -131,17 +156,19 @@ class ChartSession:
             for k in keys:
                 changes.append(k)
                 if k == '$prices':
-                    periods = packet['data'][1]['$prices']
-                    if not periods or not periods['s']: return
+                    periods = packet['data'][1]['$prices']['s']
 
-                    for p in periods['s']:
+                    if not periods:
+                        return
+
+                    for p in periods:
                         self.chart_session['indexes'][p['i']] = p['v']
                         self.__periods[p['v'][0]] = {
                             'time': p['v'][0],
                             'open': p['v'][1],
                             'close': p['v'][4],
-                            'max': p['v'][2],
-                            'min': p['v'][3],
+                            'high': p['v'][2],
+                            'low': p['v'][3],
                             'volume': round(p['v'][5] * 100) / 100,
                         }
 
@@ -149,8 +176,8 @@ class ChartSession:
                             'time': p['v'][0],
                             'open': p['v'][1],
                             'close': p['v'][4],
-                            'max': p['v'][2],
-                            'min': p['v'][3],
+                            'high': p['v'][2],
+                            'low': p['v'][3],
                             'volume': round(p['v'][5] * 100) / 100,
                         }
 
@@ -160,6 +187,7 @@ class ChartSession:
             self.handleEvent('update', changes)
             return
 
+        ## Error handling
         if packet['type'] == 'symbol_error':
             self.handleError(f"({packet['data'][1]}) Symbol error:", packet['data'][2])
             return
@@ -278,8 +306,63 @@ class ChartSession:
 
         self.set_series(options.get('timeframe'), options.get('range') or 100, options.get('to'))
 
-    def fetchMore(self, number = 1):
+    def fetch_more(self, number = 100):
         self.__client['send']('request_more_data', [self.__chart_session_id, '$prices', number])
+
+    def save_batch(self, batch:list, filename):
+        try:
+            file_exists = os.path.isfile(filename)
+
+            with open(filename, mode='a', newline='') as file:
+                writer = csv.DictWriter(file, fieldnames=["time", "open", "high", "low", "close", "volume"])
+
+                if not file_exists:
+                    writer.writeheader()  # Write header only once
+
+                for row in batch:
+                    writer.writerow(row)
+
+            print(f"Saved batch of {len(batch)} candles to {filename}")
+        except Exception as e:
+            print(f"Error saving batch: {e}")
+
+    def download_data(self, start:datetime.datetime, end:datetime.datetime, filename):
+        """
+        Downloads historical data for the specified time range and saves it to a CSV file.
+        Args:
+            start (int): The start time in milliseconds since epoch.
+            end (int): The end time in milliseconds since epoch.
+            filename (str): The name of the CSV file to save the data.
+        """
+
+        batch_size = 100
+
+        self.collected_data = []
+
+        # convert to Unix timestamps (seconds)
+        start_ts = int(start.timestamp())
+        end_ts = int(end.timestamp())
+
+        def on_batch_loaded(args):
+            # Filter data within range
+            data = args[0]
+            filtered = [c for c in data if start_ts <= c["time"] <= end_ts]
+            self.collected_data.extend(filtered)
+
+            # Check if we've reached or passed the start timestamp
+            oldest_ts = min(c["time"] for c in data)
+            if oldest_ts <= start_ts:
+                self.save_batch(self.collected_data, filename)
+                self.__client['end']() # close the connection
+                print("✅ Finished downloading requested range.")
+                return
+             
+            self.fetch_more(batch_size)
+
+        self.on_series_loaded(on_batch_loaded)
+
+    def on_series_loaded(self, cb):
+        self.callbacks['seriesLoaded'].append(cb)
 
     def on_symbol_loaded(self, cb):
         self.callbacks['symbolLoaded'].append(cb)

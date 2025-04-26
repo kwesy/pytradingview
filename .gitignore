@@ -17,3 +17,7 @@ build
 *.coverage.*
 *.cover
 tmp.py
+2tmp.py
+tvsocketmessages.md
+examples/download.py
+.gitignore

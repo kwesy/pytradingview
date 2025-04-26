@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pytradingview"
-version = "0.1.1"
+version = "0.2.0"
 description = "A Python client for TradingView WebSocket API. It's a lightweight library capable of providing real-time data on stocks, cryptocurrencies, indices etc."
 authors = [{ name = "Onesimus Graves-Sampson", email = "onesimusgravessampson1@gmail.com" }]
 readme = "README.md"
