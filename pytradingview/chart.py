@@ -352,7 +352,8 @@ class ChartSession:
             # Check if we've reached or passed the start timestamp
             oldest_ts = min(c["time"] for c in data)
             if oldest_ts <= start_ts:
-                self.save_batch(self.collected_data, filename)
+                sorted_data = sorted(self.collected_data, key=lambda x: x['time'], reverse=True)
+                self.save_batch(sorted_data, filename)
                 self.__client['end']() # close the connection
                 print("✅ Finished downloading requested range.")
                 return
