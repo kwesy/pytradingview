@@ -12,6 +12,8 @@ def parse_args():
     parser.add_argument('-e', '--end', type=str, help="End date (YYYY-MM-DD HH:MM)")
     parser.add_argument('-u', '--currency', type=str, help="Set unit of currency. Default is 'USD'", default="USD")
     parser.add_argument('-o', '--output', type=str, help="Output filename.", default="output.csv")
+    parser.add_argument('--search', help="Search for symbol using TradingView's symbol search")
+    parser.add_argument('--max', type=int, default=50, help="Maximum number of results to return from search (default: 50)")
 
     # Show help if no arguments are provided
     if len(sys.argv) == 1:
@@ -21,7 +23,12 @@ def parse_args():
 
 def main():
 
+    from pytradingview import TVclient
+
     args = parse_args()
+
+    client = TVclient()
+    chart = client.chart
 
     if args.download:
         try:
@@ -30,11 +37,6 @@ def main():
         except ValueError:
             print("⚠️ Invalid datetime format. Use: YYYY-MM-DD HH:MM (e.g., '2025-05-20 08:00')")
             return
-
-        from pytradingview import TVclient
-
-        client = TVclient()
-        chart = client.chart
 
         # Set up the chart
         chart.set_up_chart()
@@ -52,6 +54,13 @@ def main():
 
         # Start the WebSocket connection
         client.create_connection()
+
+    if args.search:
+        result = chart.search_symbols(args.search, args.max)
+        print(f"\n🔎 Results for \"{args.search}\" ({len(result)}):")
+        for item in sorted(result, key=lambda x: x['symbol']):
+            print(f"- {item['symbol']} ({item['description']}) [{item['type']}]")
+        sys.exit(0)
 
 if __name__ == "__main__":
     main()

@@ -6,6 +6,8 @@ A lightweight, open-source Python client for connecting to TradingView's WebSock
 
 - WebSocket connection management
 - Easy to extend for custom signals and data
+- Download data
+- Search for symbols
 
 ## Dependencies
 ```bash
@@ -53,6 +55,9 @@ client.create_connection()
 #### Command line (CLI)
 ```bash
 python -m pytradingview -d -s '2025-04-24 00:00' -e '2025-04-25 00:00' -p 'FX:EURUSD' 
+```
+```bash
+python -m pytradingview --search EURUSD --max 50
 ```
 
 ## Contributing

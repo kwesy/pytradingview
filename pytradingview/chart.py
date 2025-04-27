@@ -4,7 +4,9 @@ import json
 import math
 import os
 import time
-from .utils import genSessionID
+
+import requests
+from .utils import genSessionID, strip_html_tags
 from operator import itemgetter
 
 
@@ -361,6 +363,69 @@ class ChartSession:
             self.fetch_more(batch_size)
 
         self.on_series_loaded(on_batch_loaded)
+
+    def search_symbols(self, query: str, max_results=200, country="US", lang="en") -> list:
+        """
+        Searches for trading symbols using the TradingView symbol search API.
+        Args:
+            query (str): The search query string to look for symbols.
+            max_results (int, optional): The maximum number of results to return. Defaults to 200.
+            country (str, optional): The country code to filter results by. Defaults to "US".
+            lang (str, optional): The language code for the search results. Defaults to "en".
+        Returns:
+            list: A list of dictionaries containing symbol information. Each dictionary includes:
+                - "symbol" (str): The formatted symbol string (e.g., "EXCHANGE:SYMBOL").
+                - "description" (str): A description of the symbol.
+                - "type" (str): The type of the symbol (e.g., "stock", "crypto").
+        Raises:
+            requests.exceptions.RequestException: If the HTTP request to the API fails.
+            ValueError: If the response from the API is invalid or cannot be parsed.
+        """
+
+        url = "https://symbol-search.tradingview.com/symbol_search/v3/"
+        headers = {
+            "User-Agent": "Mozilla/5.0",
+            "Accept": "*/*",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Referer": "https://www.tradingview.com/",
+            "Origin": "https://www.tradingview.com",
+        }
+
+        results = []
+        start = 0
+
+        while len(results) < max_results:
+            params = {
+                "text": query,
+                "hl": 1,
+                "exchange": "",
+                "lang": lang,
+                "search_type": "undefined",
+                "domain": "production",
+                "sort_by_country": country,
+                "promo": "true",
+                "start": start
+            }
+
+            resp = requests.get(url, params=params, headers=headers, timeout=20)
+            resp.raise_for_status()
+
+            data = resp.json()
+            chunk = data.get("symbols", [])
+            symbols_remaining = data.get("symbols_remaining", 0)
+
+            results.extend(chunk)
+            start += len(chunk)
+
+            if not symbols_remaining or not chunk:
+                break
+
+        return [{
+            "symbol": strip_html_tags(f"{item.get('prefix', item.get('source_id'))}:{item['symbol']}"),
+            "description": strip_html_tags(item.get("description", "")),
+            "type": item.get("type", "")
+        } for item in results[:max_results]]
+
 
     def on_series_loaded(self, cb):
         self.callbacks['seriesLoaded'].append(cb)
