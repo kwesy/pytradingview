@@ -12,6 +12,7 @@ A lightweight, open-source Python client for connecting to TradingView's WebSock
 ## Dependencies
 ```bash
 websocket-client
+requests
 ```
 
 ## Installation
@@ -27,7 +28,7 @@ from pytradingview import TVclient
 
 # Create the client and chart
 client = TVclient()
-chart = client.Chart
+chart = client.chart
 
 # Set up the chart
 chart.set_up_chart()
@@ -50,11 +51,15 @@ chart.on_update(handle_update)
 
 # Start the WebSocket connection
 client.create_connection()
+
 ```
 
 #### Command line (CLI)
 ```bash
 python -m pytradingview -d -s '2025-04-24 00:00' -e '2025-04-25 00:00' -p 'FX:EURUSD' 
+```
+```bash
+python -m pytradingview -d -s '2025-04-24 00:00' -e 'now' -p 'FX:EURUSD'
 ```
 ```bash
 python -m pytradingview --search EURUSD --max 50

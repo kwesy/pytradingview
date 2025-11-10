@@ -1,13 +1,9 @@
 import csv
 import datetime
 import json
-import math
 import os
-import time
-
 import requests
 from .utils import genSessionID, strip_html_tags
-from operator import itemgetter
 
 
 chart_types = {
@@ -145,7 +141,7 @@ class ChartSession:
                     'close': p['v'][4],
                     'high': p['v'][2],
                     'low': p['v'][3],
-                    'volume': round(p['v'][5] * 100) / 100,
+                    'volume': round(p['v'][5] * 100) / 100 if len(p['v']) > 5 else None,
                 }
                 candles.append(c)
             self.handleEvent('seriesLoaded', candles)
@@ -171,7 +167,7 @@ class ChartSession:
                             'close': p['v'][4],
                             'high': p['v'][2],
                             'low': p['v'][3],
-                            'volume': round(p['v'][5] * 100) / 100,
+                            'volume': round(p['v'][5] * 100) / 100 if len(p['v']) > 5 else 0,
                         }
 
                         self.__current_period = {
@@ -180,7 +176,7 @@ class ChartSession:
                             'close': p['v'][4],
                             'high': p['v'][2],
                             'low': p['v'][3],
-                            'volume': round(p['v'][5] * 100) / 100,
+                            'volume': round(p['v'][5] * 100) / 100 if len(p['v']) > 5 else 0,
                         }
 
                     continue
