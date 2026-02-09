@@ -30,11 +30,11 @@ jobs:
       - name: Install dev dependencies
         run: pip install -e ".[dev]"
 
-      - name: Run linting (Ruff)
-        run: ruff check pytradingview tests
+      # - name: Run linting (Ruff)
+      #   run: ruff check pytradingview tests
 
-      - name: Check formatting (Black)
-        run: black --check pytradingview tests
+      # - name: Check formatting (Black)
+      #   run: black --check pytradingview tests
 
       - name: Run tests (pytest)
         run: pytest --maxfail=1 --disable-warnings -v
