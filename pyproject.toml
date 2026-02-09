@@ -1,25 +1,42 @@
 [build-system]
-requires = ["setuptools>=61", "wheel"]
+requires = ["setuptools>=61", "wheel", "setuptools_scm[toml]>=8.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "pytradingview"
-version = "0.4.0"
-description = "A Python client for TradingView WebSocket API. It's a lightweight library capable of providing real-time data on stocks, cryptocurrencies, indices etc."
-readme = "README.md"
+# version will be derived from git tags automatically
+dynamic = ["version"]
+description = "A Python client for TradingView WebSocket API. Lightweight, real-time data for stocks, crypto, indices, etc."
+readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.8"
-license = "MIT"
+license = { text = "MIT" }
 authors = [
-  {name = "Onesimus Graves-Sampson", email = "onesimusgravessampson1@gmail.com"}
+  { name = "Onesimus Graves-Sampson", email = "onesimusgravessampson1@gmail.com" }
 ]
 keywords = ["tradingview", "trading", "forex", "stocks", "crypto"]
-dependencies = ["websocket-client>=1.5.1", "requests>=2.32.3"]
+dependencies = [
+  "websocket-client>=1.5.1",
+  "requests>=2.32.3"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.4",
+  "responses>=0.26",
+  "black>=24.0",
+  "ruff>=0.0.305"
+]
 
 [project.urls]
-"Homepage" = "https://github.com/kwesy/pytradingview.git"
+Homepage = "https://github.com/kwesy/pytradingview"
 
 [project.scripts]
 pytradingview = "pytradingview.__main__:main"
 
 [tool.setuptools.packages.find]
 include = ["pytradingview"]
+
+[tool.setuptools_scm]
+# This will derive version from git tags like v0.4.0
+version_scheme = "release-branch-semver"
+local_scheme = "no-local-version"
