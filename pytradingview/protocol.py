@@ -92,4 +92,4 @@ def parse_compressed(data):
         object: The decompressed and parsed JSON content as a Python object 
                 (typically a dict or list).
     """
-    return json.load(zlib.decompress(base64.b64decode(data)))
+    return json.loads(zlib.decompress(base64.b64decode(data)))
