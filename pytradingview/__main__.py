@@ -14,6 +14,9 @@ def parse_args():
     parser.add_argument('-o', '--output', type=str, help="Output filename.", default="output.csv")
     parser.add_argument('--search', help="Search for symbol using TradingView's symbol search")
     parser.add_argument('--max', type=int, default=50, help="Maximum number of results to return from search (default: 50)")
+    parser.add_argument('--auth-token', type=str, help="TradingView auth token")
+    parser.add_argument('--username', type=str, help="TradingView username/email")
+    parser.add_argument('--password', type=str, help="TradingView password")
 
     # Show help if no arguments are provided
     if len(sys.argv) == 1:
@@ -27,7 +30,11 @@ def main():
 
     args = parse_args()
 
-    client = TVclient()
+    client = TVclient(
+        auth_token=args.auth_token,
+        username=args.username,
+        password=args.password,
+    )
     chart = client.chart
 
     if args.download:

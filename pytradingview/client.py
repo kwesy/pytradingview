@@ -1,9 +1,13 @@
-import threading
-import time
 import websocket
+
+from .auth import get_auth_token
 from .quote import QuoteSession
 from .chart import ChartSession
 from . import protocol
+
+
+GUEST_AUTH_TOKEN = "unauthorized_user_token"
+
 
 class Client():
     """
@@ -13,16 +17,20 @@ class Client():
     and provides event-based callbacks for real-time data updates.
     """
 
-    def __init__(self):
+    def __init__(self, auth_token=None, username=None, password=None):
         """
         Initializes the Client object, setting up the WebSocket connection parameters,
         session management, and the initial authentication token.
         """
+        if (username and not password) or (password and not username):
+            raise ValueError("username and password must both be provided")
+
         self.wsapp = None
         self.__logged = False
         self.__is_opened = False
         self.__send_queue = []
         self.sessions = {}
+        self.__auth_token = auth_token or GUEST_AUTH_TOKEN
 
         self.client_bridge = {
             'sessions': self.sessions,
@@ -33,10 +41,10 @@ class Client():
         self.quote = QuoteSession(self.client_bridge)
         self.chart = ChartSession(self.client_bridge)
 
-        self.__send_queue.insert(0, protocol.format_ws_packet({
-            'm': 'set_auth_token', 'p': ['unauthorized_user_token']
-            })
-        )
+        if username and password and not auth_token:
+            self.__auth_token = get_auth_token(username=username, password=password)
+
+        self.send("set_auth_token", [self.__auth_token])
 
     @property
     def get_client_brigde(self):
@@ -121,6 +129,10 @@ class Client():
         """Registers a callback for all events."""
         self.callbacks['event'].append(cb)
 
+    def on_ws_error(self, ws, error):
+        """Handles websocket library errors and dispatches them as client errors."""
+        self.handle_error(error)
+
     def is_logged(self):
         """
         Checks if the client is currently authenticated.
@@ -138,6 +150,29 @@ class Client():
             bool: True if open, False otherwise.
         """
         return self.__is_opened
+
+    @property
+    def auth_token(self):
+        """Returns the currently configured TradingView auth token."""
+        return self.__auth_token
+
+    def set_auth_token(self, auth_token):
+        """
+        Updates the active auth token and queues it for websocket use.
+        """
+        if not auth_token:
+            raise ValueError("auth_token is required")
+
+        self.__auth_token = auth_token
+        self.send("set_auth_token", [auth_token])
+
+    def login(self, username, password):
+        """
+        Authenticates with TradingView credentials and applies the returned token.
+        """
+        token = get_auth_token(username=username, password=password)
+        self.set_auth_token(token)
+        return token
 
     def send(self, t, p=None):
         """
@@ -190,7 +225,7 @@ class Client():
               self.send, self.handle_event, self.handle_error, and self.sessions.
             - Debugging print statements are commented out in the code.
         """
-        if not self.is_open:
+        if not self.is_open():
             return None
 
         packets = protocol.parse_ws_packet(string)
@@ -217,9 +252,10 @@ class Client():
                 }
 
                 session = packet['p'][0]
+                bound_session = self.sessions.get(session)
 
-                if session and self.sessions[session]:
-                    self.sessions[session]['onData'](parsed)
+                if session and bound_session:
+                    bound_session['onData'](parsed)
                     # print('passed ', parsed)
                     continue
 
@@ -240,6 +276,7 @@ class Client():
         self.parse_packet(message)
         if not self.__logged and self.__is_opened:
             self.__logged = True
+            self.send_queue()
 
     def on_close(self, ws, close_status_code, close_msg):
         """
@@ -273,11 +310,11 @@ class Client():
             on_message=self.on_message,
             on_close=self.on_close,
             on_open=self.on_open,
-            on_error=self.on_error
+            on_error=self.on_ws_error
         )
         self.wsapp.run_forever(origin='https://s.tradingview.com')
 
-    def end(self, callback):
+    def end(self, callback=None):
         """
         Closes the WebSocket connection and executes the provided callback function.
 
@@ -285,4 +322,5 @@ class Client():
             callback (function): A function to be called after the WebSocket connection is closed.
         """
         self.wsapp.close()
-        callback()
+        if callback:
+            callback()
