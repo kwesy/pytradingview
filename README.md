@@ -89,6 +89,10 @@ python -m pytradingview --search EURUSD --max 50
 ```bash
 python -m pytradingview -d -p 'CME_MINI:ES1!' -t '1' -s '-1d' -e 'now' --username 'you@example.com' --password 'your-password'
 ```
+```bash
+export PYTRADINGVIEW_AUTH_TOKEN='YOUR_TRADINGVIEW_AUTH_TOKEN'
+python -m pytradingview -d -p 'CME_MINI:ES1!' -t '1' --start=-2h --end=now -o /tmp/es_1m.csv
+```
 
 ## Contributing
 

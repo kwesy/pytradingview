@@ -1,7 +1,22 @@
 import argparse
+import os
 import sys
 from .utils import parse_datetime
 from .auth import TradingViewAuthError
+
+
+AUTH_TOKEN_ENV_VARS = ("PYTRADINGVIEW_AUTH_TOKEN", "TV_AUTH_TOKEN")
+
+
+def resolve_auth_token(cli_auth_token: str = None) -> str:
+    """
+    Resolve auth token from env vars first, then CLI argument fallback.
+    """
+    for env_var in AUTH_TOKEN_ENV_VARS:
+        token = os.getenv(env_var)
+        if token:
+            return token
+    return cli_auth_token
 
 
 def parse_args():
@@ -15,7 +30,11 @@ def parse_args():
     parser.add_argument('-o', '--output', type=str, help="Output filename.", default="output.csv")
     parser.add_argument('--search', help="Search for symbol using TradingView's symbol search")
     parser.add_argument('--max', type=int, default=50, help="Maximum number of results to return from search (default: 50)")
-    parser.add_argument('--auth-token', type=str, help="TradingView auth token")
+    parser.add_argument(
+        '--auth-token',
+        type=str,
+        help="TradingView auth token (fallback env: PYTRADINGVIEW_AUTH_TOKEN, TV_AUTH_TOKEN)",
+    )
     parser.add_argument('--username', type=str, help="TradingView username/email")
     parser.add_argument('--password', type=str, help="TradingView password")
 
@@ -30,10 +49,11 @@ def main():
     from pytradingview import TVclient
 
     args = parse_args()
+    auth_token = resolve_auth_token(args.auth_token)
 
     try:
         client = TVclient(
-            auth_token=args.auth_token,
+            auth_token=auth_token,
             username=args.username,
             password=args.password,
         )
