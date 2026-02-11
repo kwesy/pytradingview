@@ -54,6 +54,28 @@ client.create_connection()
 
 ```
 
+### Authentication
+Guest mode (default):
+
+```python
+from pytradingview import TVclient
+client = TVclient()  # uses TradingView unauthorized_user_token
+```
+
+Auth token mode:
+
+```python
+from pytradingview import TVclient
+client = TVclient(auth_token="YOUR_TRADINGVIEW_AUTH_TOKEN")
+```
+
+Username/password mode (fetches token via TradingView signin endpoint):
+
+```python
+from pytradingview import TVclient
+client = TVclient(username="you@example.com", password="your-password")
+```
+
 #### Command line (CLI)
 ```bash
 python -m pytradingview -d -s '2025-04-24 00:00' -e '2025-04-25 00:00' -p 'FX:EURUSD' 
@@ -63,6 +85,13 @@ python -m pytradingview -d -s '2025-04-24 00:00' -e 'now' -p 'FX:EURUSD'
 ```
 ```bash
 python -m pytradingview --search EURUSD --max 50
+```
+```bash
+python -m pytradingview -d -p 'CME_MINI:ES1!' -t '1' -s '-1d' -e 'now' --username 'you@example.com' --password 'your-password'
+```
+```bash
+export PYTRADINGVIEW_AUTH_TOKEN='YOUR_TRADINGVIEW_AUTH_TOKEN'
+python -m pytradingview -d -p 'CME_MINI:ES1!' -t '1' --start=-2h --end=now -o /tmp/es_1m.csv
 ```
 
 ## Contributing

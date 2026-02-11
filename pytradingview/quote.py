@@ -89,6 +89,46 @@ class QuoteSession:
         self.__client = client_bridge
         self.__symbol_listeners = {}
 
+    @property
+    def session_id(self):
+        return self.__session_id
+
+    def on_symbol(self, symbol: str, callback):
+        """
+        Register a callback for quote updates on a specific symbol.
+        """
+        listeners = self.__symbol_listeners.setdefault(symbol, [])
+        listeners.append(callback)
+
+    def add_symbols(self, symbols, fast: bool = True, force_permission: bool = True):
+        """
+        Subscribe one or more symbols to the active quote session.
+        """
+        if isinstance(symbols, str):
+            symbols = [symbols]
+
+        normalized = [s.strip() for s in symbols if s and s.strip()]
+        if not normalized:
+            return
+
+        for symbol in normalized:
+            self.__symbol_listeners.setdefault(symbol, [])
+            payload = [self.__session_id, symbol]
+            if force_permission:
+                payload.append({"flags": ["force_permission"]})
+            self.__client['send']('quote_add_symbols', payload)
+
+        if fast:
+            for symbol in normalized:
+                self.__client['send']('quote_fast_symbols', [self.__session_id, symbol])
+
+    def remove_symbol(self, symbol: str):
+        """
+        Unsubscribe a symbol from the active quote session.
+        """
+        self.__symbol_listeners.pop(symbol, None)
+        self.__client['send']('quote_remove_symbols', [self.__session_id, symbol])
+
     def on_data_q(self, packet):
         """
         Handles incoming quote data packets and dispatches them to registered symbol listeners.
@@ -117,20 +157,22 @@ class QuoteSession:
         if packet['type'] == 'quote_completed':
 
             symbol = packet['data'][1]
-            if not self.__symbol_listeners[symbol]:
+            listeners = self.__symbol_listeners.get(symbol, [])
+            if not listeners:
                 self.__client['send']('quote_remove_symbols', [self.__session_id, symbol])
                 return
 
-            for h in self.__symbol_listeners[symbol]:
+            for h in listeners:
                 h(packet)
 
         if packet['type'] == 'qsd':
             symbol = packet['data'][1]['n']
-            if not self.__symbol_listeners[symbol]:
+            listeners = self.__symbol_listeners.get(symbol, [])
+            if not listeners:
                 self.__client['send']('quote_remove_symbols', [self.__session_id, symbol])
                 return
 
-            for h in self.__symbol_listeners[symbol]:
+            for h in listeners:
                 h(packet)
 
     def set_up_quote(self, options: dict = None):

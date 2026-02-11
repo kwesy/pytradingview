@@ -352,7 +352,7 @@ class ChartSession:
             if oldest_ts <= start_ts:
                 sorted_data = sorted(self.collected_data, key=lambda x: x['time'], reverse=True)
                 self.save_batch(sorted_data, filename)
-                self.__client['end']() # close the connection
+                self.__client['end'](lambda: None) # close the connection
                 print("✅ Finished downloading requested range.")
                 return
              
