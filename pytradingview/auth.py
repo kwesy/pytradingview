@@ -71,7 +71,10 @@ def get_auth_token(
 
     token = data.get("user", {}).get("auth_token")
     if not token:
+        code = data.get("code")
         message = data.get("error") or data.get("message") or "auth token missing"
+        if code:
+            message = f"{message} (code={code})"
         raise TradingViewAuthError(message)
 
     return token

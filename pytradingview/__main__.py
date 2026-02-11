@@ -1,6 +1,7 @@
 import argparse
 import sys
 from .utils import parse_datetime
+from .auth import TradingViewAuthError
 
 
 def parse_args():
@@ -30,11 +31,15 @@ def main():
 
     args = parse_args()
 
-    client = TVclient(
-        auth_token=args.auth_token,
-        username=args.username,
-        password=args.password,
-    )
+    try:
+        client = TVclient(
+            auth_token=args.auth_token,
+            username=args.username,
+            password=args.password,
+        )
+    except TradingViewAuthError as exc:
+        print(f"Authentication failed: {exc}")
+        sys.exit(2)
     chart = client.chart
 
     if args.download:
