@@ -42,6 +42,11 @@ def parse_args():
         default=0,
         help="Stop after N seconds (0 = no timeout).",
     )
+    parser.add_argument(
+        "--debug-raw",
+        action="store_true",
+        help="Print raw non-session websocket packets for debugging.",
+    )
     return parser.parse_args()
 
 
@@ -117,6 +122,8 @@ def main():
 
     client.on_connected(on_connected)
     client.on_error(on_error)
+    if args.debug_raw:
+        client.on_data(lambda packet: print(f"[raw] {packet}"))
 
     quote.set_up_quote({"customFields": ["lp", "lp_time", "bid", "ask", "volume"]})
     for symbol in symbols:

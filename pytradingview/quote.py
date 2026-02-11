@@ -119,7 +119,8 @@ class QuoteSession:
             self.__client['send']('quote_add_symbols', payload)
 
         if fast:
-            self.__client['send']('quote_fast_symbols', [self.__session_id] + normalized)
+            for symbol in normalized:
+                self.__client['send']('quote_fast_symbols', [self.__session_id, symbol])
 
     def remove_symbol(self, symbol: str):
         """
